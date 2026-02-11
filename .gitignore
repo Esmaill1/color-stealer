@@ -1,0 +1,47 @@
+# Images
+*.jpg
+*.jpeg
+*.png
+*.tif
+*.tiff
+*.gif
+*.bmp
+*.cr2
+*.nef
+*.arw
+*.raw
+
+# Folders with images
+/Raw_Photos/
+/Finished_Photos/
+/Fixed_Photos/
+/Edited_Photos/
+/before/
+/after/
+/ss/
+
+# Cached model files
+trained_curves.npz
+My_Style.cube
+style_match.cube
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
