@@ -45,3 +45,9 @@ venv/
 # OS
 .DS_Store
 Thumbs.db
+*
+*.npz
+*.cube
+lut3 (2).py
+__pycache__/
+
