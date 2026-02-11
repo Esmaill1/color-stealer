@@ -380,10 +380,6 @@ else:
             save_trained_curves(model)
 
     if model:
-        # Need hue_shifts/hue_counts accessible for apply_grade
-        hue_shifts = model['hue_shifts']
-        hue_counts = model['hue_counts']
-
         # 2. Export .cube file only if it doesn't exist
         if not os.path.exists("My_Style.cube"):
             print("\n" + "=" * 50)
