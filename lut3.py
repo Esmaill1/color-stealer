@@ -2,6 +2,7 @@ import numpy as np
 import os
 from PIL import Image
 from scipy.interpolate import interp1d
+from scipy.signal import savgol_filter
 
 MODEL_CACHE = "trained_curves.npz"
 
@@ -118,16 +119,46 @@ def extract_curves_from_pairs(pairs):
             print(f"   ERROR: {channel_names[ch]} channel has no data!")
             return None
 
-        # Smooth interpolation for missing values
+        # Normalize counts for weighting (log scale for stability)
+        # Rare pixels (few counts) have lower weight; common pixels have higher weight
+        max_count = np.max(y_counts[y_counts > 0])
+        min_count = np.min(y_counts[y_counts > 0])
+        
+        # Use log weighting to compress the range but still differentiate
+        normalized_counts = np.zeros_like(y_counts, dtype=float)
+        normalized_counts[y_counts > 0] = np.log1p(y_counts[y_counts > 0] / max_count * 100)
+        normalized_counts = normalized_counts / np.max(normalized_counts)
+        
+        # Weighted interpolation: values with higher confidence are more influential
+        y_means_weighted = y_means.copy()
+        for i in np.where(valid_mask)[0]:
+            if y_counts[i] < 100:  # Low-confidence values
+                # Smooth them towards neighbors
+                neighbors = y_means[max(0, i-2):min(256, i+3)]
+                valid_neighbors = neighbors[~np.isnan(neighbors)]
+                if len(valid_neighbors) > 0:
+                    y_means_weighted[i] = np.mean(valid_neighbors)
+        
+        # Primary interpolation for missing values
         interpolator = interp1d(
             x_bins[valid_mask],
-            y_means[valid_mask],
+            y_means_weighted[valid_mask],
             kind="linear",
             fill_value="extrapolate",
             bounds_error=False,
         )
 
-        full_lut = interpolator(np.arange(256)).clip(0, 255).astype(np.uint8)
+        full_lut = interpolator(np.arange(256))
+        
+        # Apply Savitzky-Golay smoothing for professional, clean curves
+        # window_length=11 for gentle smoothing, polyorder=2 for polynomial fit
+        try:
+            full_lut = savgol_filter(full_lut, window_length=11, polyorder=2)
+        except ValueError:
+            # If dataset is too small, fall back to simpler smoothing
+            full_lut = savgol_filter(full_lut, window_length=5, polyorder=1)
+        
+        full_lut = full_lut.clip(0, 255).astype(np.uint8)
         luts.append(full_lut)
 
     return luts
